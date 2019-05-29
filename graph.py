@@ -1,36 +1,35 @@
 # import networkx as nx
 import random
 
-# modified from Prof. Bart Massey's code from CS350
-# FIXME will need to cite later
-
+# modified from Massey, CS-350
 class GraphAL(object):
-    def __init__(self, nvertices, edges):
-        "Create an adjacency-list (actually adjacency-set) graph."
-        self.nvertices = nvertices
-        self.neighbors = [set() for _ in range(nvertices)]
-        for v1, v2 in edges:
-            self.neighbors[v1].add(v2)
-            self.neighbors[v2].add(v1)
-    def __repr__(self):
-      return f"GraphAL({self.nvertices}, {self.neighbors})"
-# end Massey code adaptation
-
-# could adapt to be Graph attribute to keep everything bundled as one Graph object. May or may not be helpful
-def random_subset(Graph):
-  "Result should be a random subset of digits from 0 to |V| in a list"
-  nodes = [x for x in range(Graph.nvertices)]
-  print(nodes)
-  # may need to reimplement shuffle to analyze
-  random.shuffle(nodes)
-  # achtung random number; may want to change, jsut seem dumb to ahve a starting K with less than 3 vert
-  N = random.randint(3, Graph.nvertices)
-  print(N)
-  nodes = nodes[:N]
-  print(nodes)
+  def __init__(self, nvertices, edges):
+    "Create an adjacency-list sactually adjacency-set) graph."
+    self.nvertices = nvertices
+    self.neighbors = [set() for _ in range(nvertices)]
+    self.subgraph_K = None
+    self.nvertices_K = None
+    # how to keep track of edges in subgraph...
+    self.cost = float('inf')
+    for v1, v2 in edges:
+      self.neighbors[v1].add(v2)
+      self.neighbors[v2].add(v1)
+    self.random_subset()
+  def random_subset(self):
+    "Result should be a random subset of digits from 0 to |V| in a list"
+    nodes = [x for x in range(self.nvertices)]
+    # FIXME placeholder shuffle
+    random.shuffle(nodes)
+    N = random.randint(3, self.nvertices)
+    self.subgraph_K = set(nodes[:N])
+    self.nvertices_K = len(self.subgraph_K)
+  def __repr__(self):
+    "Print graph representation."
+    return f"GraphAL:\n Vert: {self.nvertices}, Neighbors:{self.neighbors}, Sub: {self.subgraph_K}, Sub num:{self.nvertices_K}"
 
 G = GraphAL(5, [(1,2),(2,3),(3,4),(0,4),(1,4)])
 print(G)
+
 
 # check for induced edge:
 def edge_check(Graph, v1, v2):
@@ -38,5 +37,3 @@ def edge_check(Graph, v1, v2):
     return True
   else: return False
 
-print(edge_check(G,4,2))
-random_subset(G)
