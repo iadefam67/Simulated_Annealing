@@ -7,6 +7,11 @@ TRIALS_PER_T = 10
 K = 1 #constant used by ap function to "to normalize the cost function so that almost all transitions are accepted at the starting temp", skiena p 256
 
 G = GraphAL(4, [(2,3)])
+
+cost = float('inf')
+K = None
+nvertices_K = None
+nedges_K = None
 print(G)
 
 # cost function notation from Feo paper (greedy alg vs SA)
@@ -34,7 +39,8 @@ def get_neighbor_solution(Graph):
   if v in K_prime:
     K_prime.remove(v)
   else K_prime.add(v)
-  # ca
+  # calculate the cost of neighbor K' solution:
+  
 
 
 
