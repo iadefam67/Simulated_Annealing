@@ -25,9 +25,10 @@ def accept_neighbor_solution(cost_K, cost_K_prime, T):
   else: return False
 
 # this is the version that accepts non-MIS neighbor solutions
-def get_neighbor_solution(Subgraph):
+def get_neighbor_solution(Graph, Subgraph):
   # get index of random node in V
-  v = random.randint(0, Subgraph.nvertices - 1)
+  v = random.randint(0,  Graph.nvertices - 1)
+  # print(f'v:{v}')
   # union or subtract v with current subset 
   # FIXME make version that doesn't copy sets
   if v in Subgraph.node_set:
@@ -40,15 +41,15 @@ K = Subgraph(G, random_subset=True)
 print(G,K)
 
 
-# hardcoded random walk solution
-
+# hardcoded random walk solution, ish
+# had a problem -- was staying in the K state unless a neighbor solution was strictly better -- this was preventing exploration. Once I fixed that, things work as expected. 
 best_cost = float('-inf')
 best_node_set = None
 
 K_cost = cost(K.nvertices, count_edges(G, K.node_set))
-for i in range(5):
+for i in range(100):
   print(f'k {K.node_set}, k cost {K_cost}')
-  K_prime = get_neighbor_solution(K)
+  K_prime = get_neighbor_solution(G,K)
   K_prime_cost = cost(len(K_prime), count_edges(G, K_prime))
   print(f'k prime {K_prime}, cost {K_prime_cost}')
   if K_prime_cost > best_cost and K_prime_cost > K_cost:
@@ -60,6 +61,10 @@ for i in range(5):
   elif K_cost > best_cost:
     best_cost = K_cost
     best_node_set = K.node_set
+  if K_cost == K_prime_cost:
+    K.node_set = K_prime
+    K.nvertices = len(K_prime)
+
   #FIXME where does this call go
   K_cost = cost(K.nvertices, count_edges(G, K.node_set))
 print(f'best cost {best_cost}')
