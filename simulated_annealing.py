@@ -15,6 +15,7 @@ def cost(num_nodes_K, num_edges_K):
   #return num_K - (LAMBDA * E_K)/T #Skiena's cost function suggestion
 
 # skiena pg 258
+# does this rely on min or max of cost function? Right now I'm maximizing (easy to fix)
 def accept_neighbor_solution(cost_K, cost_K_prime, T):
   """Probability of accepting a solution with a worse cost""" 
   delta = cost_K - cost_K_prime
