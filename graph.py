@@ -20,7 +20,8 @@ class Subgraph(object):
   """Stores a list of subset of nodes from a GraphAL object, can be randomly generated when created"""
   def __init__(self, Graph, random_subset=False):
     self.node_set = None
-    self.nvertices= None
+    self.nvertices = None
+  
     if random_subset == True:
       self.random_subset(Graph)
   def random_subset(self, Graph):
@@ -32,16 +33,16 @@ class Subgraph(object):
     self.node_set = set(nodes[:N])
     self.nvertices= len(self.node_set)
   def __repr__(self):
-    return f"Subgraph node list: {self.node_set}, Cardinality: {self.nvertices}"
+    return f"\nSubgraph node list: {self.node_set}, Cardinality: {self.nvertices}"
 
-def count_edges(GraphAL, Subgraph):
-  if Subgraph.node_set == None:
+def count_edges(GraphAL, node_set):
+  if node_set == None:
     print("No subgraph created. Run 'random_subset()'. ")
     return False
   count = 0
-  for i in Subgraph.node_set:
+  for i in node_set:
     for v in GraphAL.neighbors[i]:
-      if v in Subgraph.node_set:
+      if v in node_set:
         count += 1 
   assert count % 2 == 0
   return count/2
@@ -54,6 +55,9 @@ def edge_check(Graph, v1, v2):
 
 G = GraphAL(5, [(1,2),(2,3),(3,4),(0,4),(1,4)])
 K = Subgraph(G, random_subset=True)
-print(G)
-print(K)
-print("K edges:", count_edges(G, K))
+# print(G)
+# print(K)
+# print("K edges:", count_edges(G, K.node_set))
+
+
+c = count_edges(G, {0,1,3})
