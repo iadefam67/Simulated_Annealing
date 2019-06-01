@@ -43,17 +43,17 @@ def neighbor_union_subtract(G, K):
     K_prime_nvertices = K.nvertices + 1
   return (K_prime, K_prime_nvertices)
 
-#FIXME starting temperature....
 def simulated_annealing(G, num_itrs, T, ALPHA):
   t = T
-  while(): #FIXME
+  total_itr = 0
+  while(total_itr < MAX_ITR): #FIXME
   #until temp doesn't change OR no solution change OR maxitr  
     # create initial solution, with random subset of Graph G nodes
     K = Subgraph(G, random_subset=True)
     for i in range(ITR_PER_T):
       # construct neighbor via union/subtract
       K_prime, K_prime_nvertices = neighbor_union_subtract(G, K)
-      # calculate cost of K and K_prime
+      # calculate cost of K and K_prime,
       K_cost = cost(len(K.nvertices, count_edges(G, K.node_set)) 
       K_prime_cost = cost(K_prime_nvertices, count_edges(G, K_prime))
       #FIXME is this 100%?
@@ -73,7 +73,7 @@ def simulated_annealing(G, num_itrs, T, ALPHA):
         K.nvertices = K_prime_nvertices
     # reduce temp
     t = ALPHA * t
-  return (best_node_set, best_cost)
+  return (best_node_set, best_cost, total_itr)
 
 G = GraphAL(5, [(1,2),(2,3),(3,4),(0,4),(1,4)])
 K = Subgraph(G, random_subset=True)
