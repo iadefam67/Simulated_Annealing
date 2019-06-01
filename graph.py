@@ -1,4 +1,3 @@
-# import networkx as nx
 import random
 
 # modified from Massey, CS-350
@@ -61,3 +60,8 @@ K = Subgraph(G, random_subset=True)
 
 
 c = count_edges(G, {0,1,3})
+
+# steps for AL random gnererated graph
+# G_edges = nx.dense_gnm_random_graph(10,30)
+# G = GraphAL(10, G_edges.edges)
+# print(G)
