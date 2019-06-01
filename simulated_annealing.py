@@ -5,11 +5,11 @@ import math
 LAMBDA = 1          #should be a pos integer constant (Leo, p 870)
 ALPHA = 1        # temperature reducing coefficient, try 0.8 <= ALPHA <= 0.99 (higher alphas reduce temp more slowly)
 TRIALS_PER_T = 10
-ITR_PER_T = 10      # num of iterations before temp change
+ITR_PER_T = 5     # num of iterations before temp change
 MAX_ITR = 100       # relate to itr per t?
 
 K_CONS = 1.455 #constant used by ap function to "to normalize the cost function so that almost all transitions are accepted at the starting temp", skiena p 256 (tried range with k = (1...5), higher K values increase likelyhood of accepting worse solution. tested for T = 1 only)
-T = 1
+T = .5
 
 # cost function notation from Feo paper (greedy alg vs SA)
 # MIN cost 
@@ -43,15 +43,18 @@ def neighbor_union_subtract(G, K):
     K_prime_nvertices = K.nvertices + 1
   return (K_prime, K_prime_nvertices)
 
-
-def simulated_annealing(G, num_itrs, T, ALPHA):
+# FIXME need to make sure that temp doesn't get too small
+# throws exp error math error
+def simulated_annealing(G, num_itrs):
   t = T
   total_itr = 0
+  best_cost = float('inf')
+  best_node_set = None
   while(total_itr < MAX_ITR): #FIXME
   #until temp doesn't change OR no solution change OR maxitr  
     # create initial solution, with random subset of Graph G nodes
     K = Subgraph(G, random_subset=True)
-    for i in range(ITR_PER_T):
+    for _ in range(ITR_PER_T):
       # construct neighbor via union/subtract
       K_prime, K_prime_nvertices = neighbor_union_subtract(G, K)
       # calculate cost of K and K_prime,
@@ -63,7 +66,7 @@ def simulated_annealing(G, num_itrs, T, ALPHA):
         best_node_set = K.node_set
       elif K_prime_cost < best_cost:
         best_cost = K_prime_cost
-        best_node_set = K_prime_cost
+        best_node_set = K_prime
       # relies on MINIMIZING cost function. 
       if K_cost >= K_prime_cost:
         K.node_set = K_prime
@@ -72,52 +75,11 @@ def simulated_annealing(G, num_itrs, T, ALPHA):
       elif accept_neighbor_solution(K_cost, K_prime_cost, t):
         K.node_set = K_prime
         K.nvertices = K_prime_nvertices
+      total_itr += 1  
     # reduce temp
     t = ALPHA * t
   return (best_node_set, best_cost, total_itr)
 
 G = GraphAL(5, [(1,2),(2,3),(3,4),(0,4),(1,4)])
-print(f'G: {G}')
-tot = 0
-t = 1
-itr = 10000
-for i in range(itr):
-  K = Subgraph(G, random_subset=True)
-  print(f'K nodes {K.node_set}')
-  ans = accept_neighbor_solution(3, 1, 1)
-  if ans == True:
-    tot += 1
-print(tot/itr)
-
-
-# note that this section relies on MAXIMIZING cost function
-# hardcoded random walk solution, ish
-# had a problem -- was staying in the K state unless a neighbor solution was strictly better -- this was preventing exploration. Once I fixed that, things work as expected. 
-# best_cost = float('-inf')
-# best_node_set = None
-
-# K_cost = cost(K.nvertices, count_edges(G, K.node_set))
-# for i in range(50):
-#   print(f'k {K.node_set}, k cost {K_cost}')
-#   K_prime = get_neighbor_solution(G,K)
-#   K_prime_cost = cost(len(K_prime), count_edges(G, K_prime))
-  
-#   print(f'k prime {K_prime}, cost {K_prime_cost}')
-#   if K_prime_cost > best_cost and K_prime_cost > K_cost:
-#     K.node_set = K_prime
-#     K.nvertices = len(K_prime)
-#     best_cost = K_prime_cost
-#     best_node_set = K_prime
-#     K_cost = cost(K.nvertices, count_edges(G, K.node_set))
-#   elif K_cost > best_cost:
-#     best_cost = K_cost
-#     best_node_set = K.node_set
-#   if K_cost == K_prime_cost:
-#     K.node_set = K_prime
-#     K.nvertices = len(K_prime)
-
-#   #FIXME where does this call go
-#   K_cost = cost(K.nvertices, count_edges(G, K.node_set))
-# print(f'best cost {best_cost}')
-# print(f'set final {K.node_set}')
-
+best, bc, itr = simulated_annealing(G, 100)
+print(f'best {best}, cost {bc}, itr {itr}')
