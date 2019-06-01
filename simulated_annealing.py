@@ -1,15 +1,16 @@
+import networkx as nx
 from graph import * 
 import math
 
 #Global Parameters
+T = .5
 LAMBDA = 1          #should be a pos integer constant (Leo, p 870)
 ALPHA = 1        # temperature reducing coefficient, try 0.8 <= ALPHA <= 0.99 (higher alphas reduce temp more slowly)
 TRIALS_PER_T = 10
-ITR_PER_T = 5     # num of iterations before temp change
-MAX_ITR = 100       # relate to itr per t?
-
+ITR_PER_T = 1000     # num of iterations before temp change
+MAX_ITR = 10000       # relate to itr per t?
 K_CONS = 1.455 #constant used by ap function to "to normalize the cost function so that almost all transitions are accepted at the starting temp", skiena p 256 (tried range with k = (1...5), higher K values increase likelyhood of accepting worse solution. tested for T = 1 only)
-T = .5
+FREEZE = 100      # how many cycles with no change in solution before returning
 
 # cost function notation from Feo paper (greedy alg vs SA)
 # MIN cost 
@@ -45,15 +46,13 @@ def neighbor_union_subtract(G, K):
 
 # FIXME need to make sure that temp doesn't get too small
 # throws exp error math error
-def simulated_annealing(G, num_itrs):
+def simulated_annealing(G):
   t = T
   total_itr = 0
-  best_cost = float('inf')
+  best_cost = float('inf')        #want to minimize cost
   best_node_set = None
+  K = Subgraph(G, random_subset=True)
   while(total_itr < MAX_ITR): #FIXME
-  #until temp doesn't change OR no solution change OR maxitr  
-    # create initial solution, with random subset of Graph G nodes
-    K = Subgraph(G, random_subset=True)
     for _ in range(ITR_PER_T):
       # construct neighbor via union/subtract
       K_prime, K_prime_nvertices = neighbor_union_subtract(G, K)
@@ -75,11 +74,13 @@ def simulated_annealing(G, num_itrs):
       elif accept_neighbor_solution(K_cost, K_prime_cost, t):
         K.node_set = K_prime
         K.nvertices = K_prime_nvertices
-      total_itr += 1  
     # reduce temp
     t = ALPHA * t
-  return (best_node_set, best_cost, total_itr)
+  return (best_node_set, best_cost)
 
-G = GraphAL(5, [(1,2),(2,3),(3,4),(0,4),(1,4)])
-best, bc, itr = simulated_annealing(G, 100)
-print(f'best {best}, cost {bc}, itr {itr}')
+#G = GraphAL(5, [(1,2),(2,3),(3,4),(0,4),(1,4)])
+e = nx.dense_gnm_random_graph(100, 100)
+for i in range(11):
+  G = GraphAL(100, e.edges)
+  best, bc, itr = simulated_annealing(G)
+  print(f'best cost {bc}, itr {itr}')
