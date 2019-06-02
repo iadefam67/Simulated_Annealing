@@ -7,20 +7,19 @@ T = .5
 LAMBDA = 1          #should be a pos integer constant (Leo, p 870)
 ALPHA = 1        # temperature reducing coefficient, try 0.8 <= ALPHA <= 0.99 (higher alphas reduce temp more slowly)
 TRIALS_PER_T = 10
-ITR_PER_T = 1000     # num of iterations before temp change
-MAX_ITR = 10000       # relate to itr per t?
+ITR_PER_T = 100     # num of iterations before temp change
+MAX_ITR = 10      # relate to itr per t?
 K_CONS = 1.455 #constant used by ap function to "to normalize the cost function so that almost all transitions are accepted at the starting temp", skiena p 256 (tried range with k = (1...5), higher K values increase likelyhood of accepting worse solution. tested for T = 1 only)
 FREEZE = 100      # how many cycles with no change in solution before returning
 
 # cost function notation from Feo paper (greedy alg vs SA)
-# MIN cost 
-def cost(num_nodes_K, num_edges_K):
+# makes more sense to MAXIMIZE, since solution is num nodes in independent set 
+def cost_dense(num_nodes_K, num_edges_K):
   """Calculate cost of solution, given |K| and |E_K| where K is a (proper? why proper) subset of V and E_K is set of edges induced by K"""
-  return -num_nodes_K + (LAMBDA * num_edges_K) #Feo paper version
+  return num_nodes_K - (LAMBDA * num_edges_K) #Feo paper version
   #return num_K - (LAMBDA * E_K)/T #Skiena's cost function suggestion
 
 # skiena pg 258
-# does this rely on min or max of cost function? Right now I'm maximizing (easy to fix)
 def accept_neighbor_solution(cost_K, cost_K_prime, T):
   """Probability of accepting a solution with a worse cost""" 
   delta = cost_K - cost_K_prime
@@ -49,25 +48,27 @@ def neighbor_union_subtract(G, K):
 def simulated_annealing(G):
   t = T
   total_itr = 0
-  best_cost = float('inf')        #want to minimize cost
-  best_node_set = None
+  max_cost = float('-inf')        #want to minimize cost
+  max_node_set = None
   K = Subgraph(G, random_subset=True)
   while(total_itr < MAX_ITR): #FIXME
     for _ in range(ITR_PER_T):
       # construct neighbor via union/subtract
       K_prime, K_prime_nvertices = neighbor_union_subtract(G, K)
       # calculate cost of K and K_prime,
-      K_cost = cost(K.nvertices, count_edges(G, K.node_set))
-      K_prime_cost = cost(K_prime_nvertices, count_edges(G, K_prime))
+      K_cost = cost_dense(K.nvertices, count_edges(G, K.node_set))
+      K_prime_cost = cost_dense(K_prime_nvertices, count_edges(G, K_prime))
       #FIXME is this 100%?
-      if K_cost < best_cost:
-        best_cost = K_cost
-        best_node_set = K.node_set
-      elif K_prime_cost < best_cost:
-        best_cost = K_prime_cost
-        best_node_set = K_prime
-      # relies on MINIMIZING cost function. 
-      if K_cost >= K_prime_cost:
+      # this should be where solution change tracking should be...
+      # if k cost bigger than max
+      if K_cost > max_cost:
+        max_cost = K_cost
+        max_node_set = K.node_set
+      if K_prime_cost > max_cost:
+        max_cost = K_prime_cost
+        max_node_set = K_prime
+      # relies on MAXIMIZING cost function. 
+      if K_prime_cost >= K_cost:
         K.node_set = K_prime
         K.nvertices = K_prime_nvertices
       # accept worse solution by probability, a_n_s returns t/f
@@ -76,11 +77,16 @@ def simulated_annealing(G):
         K.nvertices = K_prime_nvertices
     # reduce temp
     t = ALPHA * t
-  return (best_node_set, best_cost)
+    total_itr += 1
+  return (max_node_set, max_cost)
 
-#G = GraphAL(5, [(1,2),(2,3),(3,4),(0,4),(1,4)])
-e = nx.dense_gnm_random_graph(100, 100)
-for i in range(11):
-  G = GraphAL(100, e.edges)
-  best, bc, itr = simulated_annealing(G)
-  print(f'best cost {bc}, itr {itr}')
+G = GraphAL(5, [(1,2),(2,3),(3,4),(0,4),(1,4)])
+# e = nx.dense_gnm_random_graph(100, 100)
+# for i in range(11):
+  # G = GraphAL(100, e.edges)
+  # best, bc = simulated_annealing(G)
+  # print(f'best cost {bc}, itr {itr}')
+
+for _ in range(10):
+  best, cost = simulated_annealing(G)
+  print(f'best {best} cost {cost}')
