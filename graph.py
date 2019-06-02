@@ -5,6 +5,7 @@ class GraphAL(object):
   def __init__(self, nvertices, edges):
     "Create an adjacency-list style graph, using sets."
     self.nvertices = nvertices
+    self.nedges = len(edges)
     self.neighbors = [set() for _ in range(nvertices)]
     #SA attributes
     # build adjacency sets 
@@ -20,7 +21,7 @@ class Subgraph(object):
   def __init__(self, Graph, random_subset=False):
     self.node_set = None
     self.nvertices = None
-  
+    self.parent_graph = Graph
     if random_subset == True:
       self.random_subset(Graph)
   def random_subset(self, Graph):
@@ -32,7 +33,7 @@ class Subgraph(object):
     self.node_set = set(nodes[:N])
     self.nvertices= len(self.node_set)
   def __repr__(self):
-    return f"\nSubgraph node list: {self.node_set}, Cardinality: {self.nvertices}"
+    return (f"\nSubgraph node list: {self.node_set}\nCardinality: {self.nvertices}, Density: {density_ratio(self.nvertices, count_edges(self.parent_graph, self.node_set))}")
 
 def count_edges(GraphAL, node_set):
   if node_set == None:
@@ -52,16 +53,19 @@ def edge_check(Graph, v1, v2):
     return True
   else: return False
 
-G = GraphAL(5, [(1,2),(2,3),(3,4),(0,4),(1,4)])
-K = Subgraph(G, random_subset=True)
+def density_ratio(nvertices, nedges):
+  try:
+    assert nedges <= (nvertices * nvertices - 1)/2
+  except AssertionError:
+    print('Impossible number of edges.')
+  return (2 * nedges)/(nvertices * (nvertices - 1))
+
+
+# density = density_ratio(10, 45)
+# print(density)
+# G = GraphAL(5, [(1,2),(2,3),(3,4),(0,4),(1,4)])
+# K = Subgraph(G, random_subset=True)
 # print(G)
 # print(K)
 # print("K edges:", count_edges(G, K.node_set))
 
-
-c = count_edges(G, {0,1,3})
-
-# steps for AL random gnererated graph
-# G_edges = nx.dense_gnm_random_graph(10,30)
-# G = GraphAL(10, G_edges.edges)
-# print(G)
