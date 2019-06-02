@@ -3,14 +3,14 @@ from graph import *
 import math
 
 #Global Parameters
-T = .5
+T = .1
 LAMBDA = 1          #should be a pos integer constant (Leo, p 870)
 ALPHA = 1        # temperature reducing coefficient, try 0.8 <= ALPHA <= 0.99 (higher alphas reduce temp more slowly)
 TRIALS_PER_T = 10
-ITR_PER_T = 100     # num of iterations before temp change
-MAX_ITR = 10      # relate to itr per t?
+ITR_PER_T = 500000     # num of iterations before temp change
+MAX_ITR = 50      # relate to itr per t?
 K_CONS = 1.455 #constant used by ap function to "to normalize the cost function so that almost all transitions are accepted at the starting temp", skiena p 256 (tried range with k = (1...5), higher K values increase likelyhood of accepting worse solution. tested for T = 1 only)
-FREEZE = 100      # how many cycles with no change in solution before returning
+FREEZE = 100000     # how many cycles with no change in solution before returning
 
 # cost function notation from Feo paper (greedy alg vs SA)
 # makes more sense to MAXIMIZE, since solution is num nodes in independent set 
@@ -47,11 +47,14 @@ def neighbor_union_subtract(G, K):
 # throws exp error math error
 def simulated_annealing(G):
   t = T
-  total_itr = 0
+  itr = 0
   max_cost = float('-inf')        #want to minimize cost
   max_node_set = None
+  max_last_update = 0
   K = Subgraph(G, random_subset=True)
-  while(total_itr < MAX_ITR): #FIXME
+  print(K)
+  count = 0
+  while(itr < MAX_ITR): #FIXME
     for _ in range(ITR_PER_T):
       # construct neighbor via union/subtract
       K_prime, K_prime_nvertices = neighbor_union_subtract(G, K)
@@ -64,9 +67,11 @@ def simulated_annealing(G):
       if K_cost > max_cost:
         max_cost = K_cost
         max_node_set = K.node_set
+        max_last_update = count
       if K_prime_cost > max_cost:
         max_cost = K_prime_cost
         max_node_set = K_prime
+        max_last_update = count
       # relies on MAXIMIZING cost function. 
       if K_prime_cost >= K_cost:
         K.node_set = K_prime
@@ -75,18 +80,24 @@ def simulated_annealing(G):
       elif accept_neighbor_solution(K_cost, K_prime_cost, t):
         K.node_set = K_prime
         K.nvertices = K_prime_nvertices
+      if (count - max_last_update) > FREEZE:
+        return (max_node_set, max_cost, count)  
+      count += 1
+      
     # reduce temp
     t = ALPHA * t
-    total_itr += 1
-  return (max_node_set, max_cost)
+    itr += 1
+  return (max_node_set, max_cost, count)
 
-G = GraphAL(5, [(1,2),(2,3),(3,4),(0,4),(1,4)])
-# e = nx.dense_gnm_random_graph(100, 100)
-# for i in range(11):
-  # G = GraphAL(100, e.edges)
-  # best, bc = simulated_annealing(G)
-  # print(f'best cost {bc}, itr {itr}')
+# G = GraphAL(5, [(1,2),(2,3),(3,4),(0,4),(1,4)])
+nodes = 15
+edges = 55
+e = nx.dense_gnm_random_graph(nodes, edges)
+G = GraphAL(nodes, e.edges)
+for i in range(11):
+  best, cost, itr_stop = simulated_annealing(G)
+  print(f'cost {cost}, itr stop: {itr_stop}, cardinality {len(best)}')
 
-for _ in range(10):
-  best, cost = simulated_annealing(G)
-  print(f'best {best} cost {cost}')
+# for _ in range(10):
+#   best, cost, itr_stop = simulated_annealing(G)
+#   print(f'best {best} cost {cost}, itr stop: {itr_stop}')
