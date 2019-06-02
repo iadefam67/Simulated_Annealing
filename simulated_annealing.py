@@ -3,24 +3,27 @@ from graph import *
 import math
 
 #Global Parameters
-T = .3
-LAMBDA = 5          #should be a pos integer constant (Leo, p 870)
-ALPHA = 1        # temperature reducing coefficient, try 0.8 <= ALPHA <= 0.99 (higher alphas reduce temp more slowly)
+T = 1
+LAMBDA = 20          #should be a pos integer constant (Leo, p 870)
+ALPHA = .99        # temperature reducing coefficient, try 0.8 <= ALPHA <= 0.99 (higher alphas reduce temp more slowly)
 TRIALS_PER_T = 10
-ITR_PER_T = 5000000     # num of iterations before temp change
-MAX_ITR = 500      # relate to itr per t?
+ITR_PER_T = 5000     # num of iterations before temp change
+MAX_ITR = 50     # relate to itr per t?
 K_CONS = 1.455 #constant used by ap function to "to normalize the cost function so that almost all transitions are accepted at the starting temp", skiena p 256 (tried range with k = (1...5), higher K values increase likelyhood of accepting worse solution. tested for T = 1 only)
-FREEZE = 5000     # how many cycles with no change in solution before returning
+FREEZE = 6000     # how many cycles with no change in solution before returning
 
 # cost function notation from Feo paper (greedy alg vs SA)
 # makes more sense to MAXIMIZE, since solution is num nodes in independent set 
-def cost_dense(num_nodes_K, num_edges_K):
+def cost_dense(num_nodes_K, num_edges_K, t=None):
   """Calculate cost of solution, given |K| and |E_K| where K is a (proper? why proper) subset of V and E_K is set of edges induced by K"""
-  return num_nodes_K - (LAMBDA * num_edges_K) #Feo paper version
-  #return num_K - (LAMBDA * E_K)/T #Skiena's cost function suggestion
+  if t:
+    return num_nodes_K - (LAMBDA * num_edges_K)/t #Skiena's cost function suggestion
+  else:
+    return num_nodes_K - (LAMBDA * num_edges_K) #Feo paper version
 
 # skiena pg 258
 def accept_neighbor_solution(cost_K, cost_K_prime, T):
+  #FIXME should verify and think through the math here....
   """Probability of accepting a solution with a worse cost""" 
   delta = cost_K - cost_K_prime
   exp_term = -delta / (K_CONS * T)
@@ -33,15 +36,10 @@ def accept_neighbor_solution(cost_K, cost_K_prime, T):
 def neighbor_union_subtract(G, K):
   # get index of random node in V
   v = random.randint(0, G.nvertices - 1)
-  # print(f'v:{v}')
-  # union or subtract v with current subset 
   if v in K.node_set:
-    K_prime = (K.node_set).difference({v})
-    K_prime_nvertices = K.nvertices - 1
+    return ((K.node_set).difference({v}), K.nvertices - 1)
   else:
-    K_prime = (K.node_set).union({v})
-    K_prime_nvertices = K.nvertices + 1
-  return (K_prime, K_prime_nvertices)
+    return ((K.node_set).union({v}), K.nvertices + 1)
 
 # FIXME need to make sure that temp doesn't get too small
 # throws exp error math error
@@ -58,8 +56,11 @@ def simulated_annealing(G):
       # construct neighbor via union/subtract
       K_prime, K_prime_nvertices = neighbor_union_subtract(G, K)
       # calculate cost of K and K_prime,
-      K_cost = cost_dense(K.nvertices, count_edges(G, K.node_set))
-      K_prime_cost = cost_dense(K_prime_nvertices, count_edges(G, K_prime))
+      #FIXME 
+      # K_cost = cost_dense(K.nvertices, count_edges(G, K.node_set))
+      # K_prime_cost = cost_dense(K_prime_nvertices, count_edges(G, K_prime))
+      K_cost = cost_dense(K.nvertices, count_edges(G, K.node_set), t)
+      K_prime_cost = cost_dense(K_prime_nvertices, count_edges(G, K_prime), t)
       # See if K or K' cost is better than current maximum
       cur_max_set, cur_max_cost = ((K.node_set, K_cost) if K_cost > K_prime_cost else (K_prime, K_prime_cost))
       if cur_max_cost > max_cost:
@@ -75,17 +76,18 @@ def simulated_annealing(G):
         K.node_set = K_prime
         K.nvertices = K_prime_nvertices
       if (count - max_last_update) > FREEZE:
+        #FIXME 
+        print(f'final temp: {t}')
         return (max_node_set, max_cost, count)  
       count += 1
-      
     # reduce temp
     t = ALPHA * t
     itr += 1
   return (max_node_set, max_cost, count)
 
 # G = GraphAL(5, [(1,2),(2,3),(3,4),(0,4),(1,4)])
-nodes = 500 
-edges = 2000
+nodes = 5000 
+edges = 20000
 e = nx.dense_gnm_random_graph(nodes, edges)
 G = GraphAL(nodes, e.edges)
 for i in range(11):
