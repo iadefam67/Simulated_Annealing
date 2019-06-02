@@ -3,14 +3,14 @@ from graph import *
 import math
 
 #Global Parameters
-T = .1
-LAMBDA = 1          #should be a pos integer constant (Leo, p 870)
+T = .3
+LAMBDA = 5          #should be a pos integer constant (Leo, p 870)
 ALPHA = 1        # temperature reducing coefficient, try 0.8 <= ALPHA <= 0.99 (higher alphas reduce temp more slowly)
 TRIALS_PER_T = 10
-ITR_PER_T = 500000     # num of iterations before temp change
-MAX_ITR = 50      # relate to itr per t?
+ITR_PER_T = 5000000     # num of iterations before temp change
+MAX_ITR = 500      # relate to itr per t?
 K_CONS = 1.455 #constant used by ap function to "to normalize the cost function so that almost all transitions are accepted at the starting temp", skiena p 256 (tried range with k = (1...5), higher K values increase likelyhood of accepting worse solution. tested for T = 1 only)
-FREEZE = 100000     # how many cycles with no change in solution before returning
+FREEZE = 5000     # how many cycles with no change in solution before returning
 
 # cost function notation from Feo paper (greedy alg vs SA)
 # makes more sense to MAXIMIZE, since solution is num nodes in independent set 
@@ -52,7 +52,6 @@ def simulated_annealing(G):
   max_node_set = None
   max_last_update = 0
   K = Subgraph(G, random_subset=True)
-  print(K)
   count = 0
   while(itr < MAX_ITR): #FIXME
     for _ in range(ITR_PER_T):
@@ -61,16 +60,11 @@ def simulated_annealing(G):
       # calculate cost of K and K_prime,
       K_cost = cost_dense(K.nvertices, count_edges(G, K.node_set))
       K_prime_cost = cost_dense(K_prime_nvertices, count_edges(G, K_prime))
-      #FIXME is this 100%?
-      # this should be where solution change tracking should be...
-      # if k cost bigger than max
-      if K_cost > max_cost:
-        max_cost = K_cost
-        max_node_set = K.node_set
-        max_last_update = count
-      if K_prime_cost > max_cost:
-        max_cost = K_prime_cost
-        max_node_set = K_prime
+      # See if K or K' cost is better than current maximum
+      cur_max_set, cur_max_cost = ((K.node_set, K_cost) if K_cost > K_prime_cost else (K_prime, K_prime_cost))
+      if cur_max_cost > max_cost:
+        max_node_set = cur_max_set
+        max_cost = cur_max_cost
         max_last_update = count
       # relies on MAXIMIZING cost function. 
       if K_prime_cost >= K_cost:
@@ -90,14 +84,15 @@ def simulated_annealing(G):
   return (max_node_set, max_cost, count)
 
 # G = GraphAL(5, [(1,2),(2,3),(3,4),(0,4),(1,4)])
-nodes = 15
-edges = 55
+nodes = 500 
+edges = 2000
 e = nx.dense_gnm_random_graph(nodes, edges)
 G = GraphAL(nodes, e.edges)
 for i in range(11):
   best, cost, itr_stop = simulated_annealing(G)
   print(f'cost {cost}, itr stop: {itr_stop}, cardinality {len(best)}')
-
+  print(f'Density of final solution: {density_ratio(len(best), count_edges(G, best))}')
+  
 # for _ in range(10):
 #   best, cost, itr_stop = simulated_annealing(G)
 #   print(f'best {best} cost {cost}, itr stop: {itr_stop}')
