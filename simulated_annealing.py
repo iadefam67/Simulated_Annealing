@@ -7,10 +7,11 @@ T = 1
 LAMBDA = 20          #should be a pos integer constant (Leo, p 870)
 ALPHA = .99        # temperature reducing coefficient, try 0.8 <= ALPHA <= 0.99 (higher alphas reduce temp more slowly)
 TRIALS_PER_T = 10
-ITR_PER_T = 5000     # num of iterations before temp change
-MAX_ITR = 50     # relate to itr per t?
+ITR_PER_T = 5000    # num of iterations before temp change
+MAX_ITR = 500     # relate to itr per t?
+#FIXME do I want to include this parameter? Need to verify the math...
 K_CONS = 1.455 #constant used by ap function to "to normalize the cost function so that almost all transitions are accepted at the starting temp", skiena p 256 (tried range with k = (1...5), higher K values increase likelyhood of accepting worse solution. tested for T = 1 only)
-FREEZE = 6000     # how many cycles with no change in solution before returning
+FREEZE = 600     # how many cycles with no change in solution before returning
 
 # cost function notation from Feo paper (greedy alg vs SA)
 # makes more sense to MAXIMIZE, since solution is num nodes in independent set 
@@ -45,6 +46,7 @@ def neighbor_union_subtract(G, K):
 # throws exp error math error
 def simulated_annealing(G):
   t = T
+  freeze = FREEZE
   itr = 0
   max_cost = float('-inf')        #want to minimize cost
   max_node_set = None
@@ -56,44 +58,51 @@ def simulated_annealing(G):
       # construct neighbor via union/subtract
       K_prime, K_prime_nvertices = neighbor_union_subtract(G, K)
       # calculate cost of K and K_prime,
-      #FIXME 
-      # K_cost = cost_dense(K.nvertices, count_edges(G, K.node_set))
-      # K_prime_cost = cost_dense(K_prime_nvertices, count_edges(G, K_prime))
-      K_cost = cost_dense(K.nvertices, count_edges(G, K.node_set), t)
-      K_prime_cost = cost_dense(K_prime_nvertices, count_edges(G, K_prime), t)
+      K_prime_nedges = count_edges(G, K_prime)
+      #FIXME should use a flag here, to check if already calculated last solution for K_cost
+      K_cost = cost_dense(K.nvertices, K.nedges, t)
+      K_prime_cost = cost_dense(K_prime_nvertices, K_prime_nedges, t)
       # See if K or K' cost is better than current maximum
-      cur_max_set, cur_max_cost = ((K.node_set, K_cost) if K_cost > K_prime_cost else (K_prime, K_prime_cost))
+      cur_max_set, cur_max_cost, cur_nedges = ((K.node_set, K_cost, K.nedges) if K_cost > K_prime_cost else (K_prime, K_prime_cost, K_prime_nedges))
       if cur_max_cost > max_cost:
         max_node_set = cur_max_set
+        max_nedges = cur_nedges
         max_cost = cur_max_cost
         max_last_update = count
       # relies on MAXIMIZING cost function. 
+      # FIXME I think this is wrong... it should accept worse solution either way, not just if the cost isnt better?
       if K_prime_cost >= K_cost:
         K.node_set = K_prime
         K.nvertices = K_prime_nvertices
+        K.nedges = K_prime_nedges
       # accept worse solution by probability, a_n_s returns t/f
       elif accept_neighbor_solution(K_cost, K_prime_cost, t):
         K.node_set = K_prime
         K.nvertices = K_prime_nvertices
-      if (count - max_last_update) > FREEZE:
+        K.nedges = K_prime_nedges
+      if (count - max_last_update) > freeze:
         #FIXME 
-        print(f'final temp: {t}')
-        return (max_node_set, max_cost, count)  
+        if density_ratio(len(max_node_set), max_nedges) == 0: 
+          print(f'final temp: {t}')
+          return (max_node_set, max_cost, max_nedges, count) 
+        else:
+          freeze = 0
       count += 1
     # reduce temp
     t = ALPHA * t
     itr += 1
-  return (max_node_set, max_cost, count)
+  print(f"Best solution found in {itr*MAX_ITR} iterations. May not be maximal IS.")
+  return (max_node_set, max_cost, max_nedges, count)
 
 # G = GraphAL(5, [(1,2),(2,3),(3,4),(0,4),(1,4)])
-nodes = 5000 
-edges = 20000
+nodes = 50 
+edges = 200
 e = nx.dense_gnm_random_graph(nodes, edges)
 G = GraphAL(nodes, e.edges)
 for i in range(11):
-  best, cost, itr_stop = simulated_annealing(G)
+  best, cost, nedges, itr_stop = simulated_annealing(G)
   print(f'cost {cost}, itr stop: {itr_stop}, cardinality {len(best)}')
-  print(f'Density of final solution: {density_ratio(len(best), count_edges(G, best))}')
+  print(f'Density of final solution: {density_ratio(len(best), nedges)}')
   
 # for _ in range(10):
 #   best, cost, itr_stop = simulated_annealing(G)
