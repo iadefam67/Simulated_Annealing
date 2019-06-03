@@ -21,7 +21,9 @@ class Subgraph(object):
   def __init__(self, Graph, random_subset=False):
     self.node_set = None
     self.nvertices = None
+    #FIXME check if this is still being used
     self.parent_graph = Graph
+    self.nedges = None
     if random_subset == True:
       self.random_subset(Graph)
   def random_subset(self, Graph):
@@ -32,6 +34,7 @@ class Subgraph(object):
     N = random.randint(3, Graph.nvertices)
     self.node_set = set(nodes[:N])
     self.nvertices= len(self.node_set)
+    self.nedges = count_edges(self.parent_graph, self.node_set)
   def __repr__(self):
     return (f"\nSubgraph node list: {self.node_set}\nCardinality: {self.nvertices}, Density: {density_ratio(self.nvertices, count_edges(self.parent_graph, self.node_set))}")
 
@@ -67,5 +70,5 @@ def density_ratio(nvertices, nedges):
 # K = Subgraph(G, random_subset=True)
 # print(G)
 # print(K)
-# print("K edges:", count_edges(G, K.node_set))
+# print("K edges:", K.nedges) 
 
