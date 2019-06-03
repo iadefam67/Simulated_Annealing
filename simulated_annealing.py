@@ -76,6 +76,7 @@ def random_search(G, max_itr):
     K_cost = cost_dense(K.nvertices, K.nedges)
     if K_cost > best_K_cost:
       best_K = K
+      best_K_cost = K_cost
   return K
     
 
@@ -130,19 +131,19 @@ def simulated_annealing(G, K):
   return (max_node_set, max_cost, max_nedges, count)
 
 # G = GraphAL(5, [(1,2),(2,3),(3,4),(0,4),(1,4)])
-nodes = 15
-edges = 150
+nodes = 5
+edges = 5 
 e = nx.dense_gnm_random_graph(nodes, edges)
 G = GraphAL(nodes, e.edges)
-K = Subgraph(G, random_subset=True)
+# K = Subgraph(G, random_subset=True)
 
 # for _ in range(20):
   # best, cost, edges, itr = naive_local_search(G, K, 10000)
   # print(f'cost {cost}, itr stop: {itr}, cardinality {len(best)}')
 
 for _ in range(10):
-  K = random_search(G, 10000)
-  print(K.nedges, K)
+  K = random_search(G, 100000)
+  print(K.nedges, K.nvertices, K)
 
 
 
