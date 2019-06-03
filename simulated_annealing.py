@@ -68,6 +68,16 @@ def naive_local_search(G, K, max_itr):
       K.nedges = K_prime_nedges
   return (max_node_set, max_cost, max_nedges, i)
 
+def random_search(G, max_itr):
+  best_K = None 
+  best_K_cost = float("-inf")
+  for _ in range(max_itr):
+    K = Subgraph(G, random_subset=True)
+    K_cost = cost_dense(K.nvertices, K.nedges)
+    if K_cost > best_K_cost:
+      best_K = K
+  return K
+    
 
 # FIXME need to make sure that temp doesn't get too small
 # throws exp error math error
@@ -126,9 +136,13 @@ e = nx.dense_gnm_random_graph(nodes, edges)
 G = GraphAL(nodes, e.edges)
 K = Subgraph(G, random_subset=True)
 
-for _ in range(20):
-  best, cost, edges, itr = naive_local_search(G, K, 10000)
-  print(f'cost {cost}, itr stop: {itr}, cardinality {len(best)}')
+# for _ in range(20):
+  # best, cost, edges, itr = naive_local_search(G, K, 10000)
+  # print(f'cost {cost}, itr stop: {itr}, cardinality {len(best)}')
+
+for _ in range(10):
+  K = random_search(G, 10000)
+  print(K.nedges, K)
 
 
 
