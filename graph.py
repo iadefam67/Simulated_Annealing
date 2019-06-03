@@ -36,7 +36,7 @@ class Subgraph(object):
     self.nvertices= len(self.node_set)
     self.nedges = count_edges(self.parent_graph, self.node_set)
   def __repr__(self):
-    return (f"\nSubgraph node list: {self.node_set}\nCardinality: {self.nvertices}, Density: {density_ratio(self.nvertices, count_edges(self.parent_graph, self.node_set))}")
+    return (f"\nSubgraph node list: {self.node_set}\nCardinality: {self.nvertices}, Density: {density_ratio(self.nvertices, self.nedges)}")
 
 def count_edges(GraphAL, node_set):
   if node_set == None:
