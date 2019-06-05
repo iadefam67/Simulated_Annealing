@@ -2,6 +2,8 @@ __author__ = 'Lynnae Bryan'
 
 import random
 
+
+# ~~~~~~~~~~~~~~~~~~ GRAPH CLASSES ~~~~~~~~~~~~~~~~~~
 class GraphAL(object):
   """An adjacency-set based graph representation, based on code written for Prof. Barton Massey's CS-350 Algorithms course. """
   def __init__(self, nvertices, edges):
@@ -38,6 +40,8 @@ class Subgraph(object):
   def __repr__(self):
     return (f"\nSubgraph node list: {self.node_set}\nCardinality: {self.nvertices}, Density: {density_ratio(self.nvertices, self.nedges)}")
 
+
+# ~~~~~~~~~~~~~~~~~~ GRAPH OPERATIONS ~~~~~~~~~~~~~~~~~~
 def count_edges(GraphAL, node_set):
   """Count the number of edges induced by a set of nodes (node_set) for a parent graph (GraphAL)."""
   if node_set == None:
@@ -67,7 +71,8 @@ def neighbor_union_subtract(G, K):
   else:
     return ((K.node_set).union({v}), K.nvertices + 1)
 
-
+# FIXME remove?
+# ~~~~~~~~~~~~~~~~~~ TEST SCRIPT ~~~~~~~~~~~~~~~~~~
 if (__name__ == '__main__'):
   density = density_ratio(10, 45)
   print(density)
