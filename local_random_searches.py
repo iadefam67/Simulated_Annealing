@@ -36,10 +36,10 @@ def naive_local_search(G, K, max_itr):
   return (max_node_set, max_cost, max_nedges, i)
 
 # ~~~~~~~~~~~~~~~~~~ RANDOM SEARCH ~~~~~~~~~~~~~~~~~~
-def random_search(G, max_itr):
+def random_search(G, K, max_itr):
   """Explores possible randomly-generated subgraphs of G, returns best found solution for subgraph K. Not guaranteed to be MIS. """
-  best_K = None 
-  best_K_cost = float("-inf")
+  best_K = K  
+  best_K_cost = cost_dense(K.nvertices, K.nedges)
   for _ in range(max_itr):
     K = Subgraph(G, random_subset=True)
     K_cost = cost_dense(K.nvertices, K.nedges)
@@ -56,8 +56,9 @@ if (__name__ == '__main__'):
   edges = 23
   e = nx.dense_gnm_random_graph(nodes, edges)
   G = GraphAL(nodes, e.edges)
+  K = Subgraph(G, random_subset=True)
   for _ in range(10):
-    K = random_search(G, 100000)
+    K = random_search(G, K, 100000)
     print(K.nedges, K.nvertices, K)
 
 

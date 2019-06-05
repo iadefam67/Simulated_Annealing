@@ -98,16 +98,7 @@ if (__name__ == '__main__'):
   edges = 9 
   e = nx.dense_gnm_random_graph(nodes, edges)
   G = GraphAL(nodes, e.edges)
-  # K = Subgraph(G, random_subset=True)
-
-  # for _ in range(20):
-    # best, cost, edges, itr = naive_local_search(G, K, 10000)
-    # print(f'cost {cost}, itr stop: {itr}, cardinality {len(best)}')
-
-  for _ in range(10):
-    K = random_search(G, 100000)
-    print(K.nedges, K.nvertices, K)
-
+  K = Subgraph(G, random_subset=True)
 
 
   # for i in range(11):
