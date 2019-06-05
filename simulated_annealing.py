@@ -4,6 +4,8 @@ __author__ = 'Lynnae Bryan'
    'The Algorithm Design Manual'. See paper for full citation. """
 
 import math
+import random
+import time
 
 import networkx as nx
 
@@ -16,11 +18,11 @@ from graph import count_edges, density_ratio, neighbor_union_subtract
 # throws exp error math error
 T = 1
 LAMBDA = 1          # Positive integer constant; penalty for violating independent set constraint 
-ALPHA = .99         # Temperature-reducing coefficient, 0.8 <= ALPHA <= 0.99 
-ITR_PER_T = 40      # Number of iterations before reducing temperature
-MAX_ITR = 5         # Max number of temperature changes
+ALPHA = 1         # Temperature-reducing coefficient, 0.8 <= ALPHA <= 0.99 
+ITR_PER_T = 10      # Number of iterations before reducing temperature
+MAX_ITR = 10        # Max number of temperature changes
 #FIXME do I want to include this parameter? Need to verify the math...
-K_CONS = 1.455 #constant used by ap function to "to normalize the cost function so that almost all transitions are accepted at the starting temp", skiena p 256 (tried range with k = (1...5), higher K values increase likelyhood of accepting worse solution. tested for T = 1 only)
+K_CONS = 1  #constant used by ap function to "to normalize the cost function so that almost all transitions are accepted at the starting temp", skiena p 256 (tried range with k = (1...5), higher K values increase likelyhood of accepting worse solution. tested for T = 1 only)
 FREEZE = 600        # Return current best solution after FREEZE iterations with no change to best solution 
 
 # ~~~~~~~~~~~~~~~~~~ COST AND NEIGHBORHOOD FUNCTIONS ~~~~~~~~~~~~~~~~~~
@@ -40,19 +42,18 @@ def accept_neighbor_solution(cost_K, cost_K_prime, T):
   else: return False
   
 # ~~~~~~~~~~~~~~~~~~ SIMULATED ANNEALING ~~~~~~~~~~~~~~~~~~ 
-def simulated_annealing(G, K):
+def simulated_annealing(G, K, alpha, itr_per_t, max_itr, freeze):
   """ Simulated Annealing implementation for the Maximum Independent Set Problem. """
   # FIXME rework globals vs parameters.
-  t = T
-  freeze = FREEZE
+  t = 1
+  # freeze = FREEZE
   itr = 0
   max_cost = float('-inf')        #want to minimize cost
   max_node_set = None
   max_nedges = None
   max_last_update = 0
-  count = 0
-  while(itr < MAX_ITR): #FIXME
-    for _ in range(ITR_PER_T):
+  while(itr < max_itr * itr_per_t): #FIXME
+    for _ in range(itr_per_t):
       # construct neighbor via union/subtract
       K_prime, K_prime_nvertices = neighbor_union_subtract(G, K)
       # calculate cost of K and K_prime,
@@ -65,7 +66,7 @@ def simulated_annealing(G, K):
         max_node_set = cur_max_set
         max_nedges = cur_nedges
         max_cost = cur_max_cost
-        max_last_update = count
+        max_last_update = itr
       # relies on MAXIMIZING cost function. 
       if K_prime_cost >= K_cost:
         K.node_set = K_prime
@@ -76,29 +77,54 @@ def simulated_annealing(G, K):
         K.node_set = K_prime
         K.nvertices = K_prime_nvertices
         K.nedges = K_prime_nedges
-      if (count - max_last_update) > freeze:
+      if (itr - max_last_update) > freeze:
         if density_ratio(len(max_node_set), max_nedges) == 0: 
-          print(f'final temp: {t}')
-          return (max_node_set, max_cost, max_nedges, count) 
+          return (max_node_set, max_cost, max_nedges, itr) 
         else:
           freeze = 0
-      count += 1
+      itr += 1
     # reduce temp
-    t = ALPHA * t
-    itr += 1
-  print(f"Best solution found in {itr*MAX_ITR} iterations. May not be maximal IS.")
-  return (max_node_set, max_cost, max_nedges, count)
+    #FIXME approx
+    if t > 0.01:
+      t = ALPHA * t
+  # if density_ratio(len(max_node_set), max_nedges) != 0:
+    # print("search failed to converge on mIS")
+  return (max_node_set, max_cost, max_nedges, itr)
 
 #FIXME 
 if (__name__ == '__main__'):
-  # add script stuff here
+  # say 4 graphs of different sizes (test on 10, 15, 20, 25)
+  # at 80% density
+  fp = open('./test_data.txt', 'w')
+  data = open('./per_run.txt', 'w')
+  num_runs = 5
+  graph_size_list = [5, 10, 15, 20]
+  for i in graph_size_list:
+    numerator = 0
+    edges = math.floor((i * (i - 1))/2 * .8)
+    nodes = i
+    for j in range(num_runs):
+      print(edges)
+      e = nx.dense_gnm_random_graph(nodes, edges, seed = i)
+      G = GraphAL(nodes, e.edges)
+      K = Subgraph(G, random_subset=True)
+      start = time.time() 
+      maxns, maxcost, maxned, i = simulated_annealing(G, K, 1, ITR_PER_T, MAX_ITR, FREEZE)
+      total_sec = time.time() - start
+      numerator += total_sec
+      data.write(f'{maxcost}, {density_ratio(len(maxns), maxned)}, {i}\n')
+    # print(f'avg {numerator/num_runs}')
+    fp.write(f'{numerator/num_runs}\n')
+
+
 
   # G = GraphAL(5, [(1,2),(2,3),(3,4),(0,4),(1,4)])
-  nodes = 5
-  edges = 9 
-  e = nx.dense_gnm_random_graph(nodes, edges)
-  G = GraphAL(nodes, e.edges)
-  K = Subgraph(G, random_subset=True)
+  # nodes = 5
+  # edges = 9 
+  # G = GraphAL(nodes, e.edges)
+  # K = Subgraph(G, random_subset=True)
+  # maxns, maxcost, maxned, i = simulated_annealing(G, K, 1, 10, MAX_ITR, FREEZE)
+  # print(i)
 
 
   # for i in range(11):
