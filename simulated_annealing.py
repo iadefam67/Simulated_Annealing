@@ -46,9 +46,8 @@ def simulated_annealing(G, K, alpha, itr_per_t, max_itr, freeze):
   """ Simulated Annealing implementation for the Maximum Independent Set Problem. """
   # FIXME rework globals vs parameters.
   t = 1
-  # freeze = FREEZE
   itr = 0
-  max_cost = float('-inf')        #want to minimize cost
+  max_cost = float('-inf')       
   max_node_set = None
   max_nedges = None
   max_last_update = 0
@@ -78,17 +77,12 @@ def simulated_annealing(G, K, alpha, itr_per_t, max_itr, freeze):
         K.nvertices = K_prime_nvertices
         K.nedges = K_prime_nedges
       if (itr - max_last_update) > freeze:
-        if density_ratio(len(max_node_set), max_nedges) == 0: 
-          return (max_node_set, max_cost, max_nedges, itr) 
-        else:
-          freeze = 0
+        return (max_node_set, max_cost, max_nedges, itr) 
       itr += 1
     # reduce temp
     #FIXME approx
     if t > 0.01:
       t = ALPHA * t
-  # if density_ratio(len(max_node_set), max_nedges) != 0:
-    # print("search failed to converge on mIS")
   return (max_node_set, max_cost, max_nedges, itr)
 # ~~~~~~~~~~~~~~~~~~ LOCAL SEARCH ~~~~~~~~~~~~~~~~~~
 def naive_local_search(G, K, max_itr):
@@ -136,28 +130,29 @@ def random_search(G, K, max_itr):
 if (__name__ == '__main__'):
   # say 4 graphs of different sizes (test on 10, 15, 20, 25)
   # at 80% density
-  density_list = [.25, .5, .75]
+  density_list = [.30, .5, .75]
+  graph_size_list = [15, 20]
   for dp in density_list:
-    runtime_fp = open('./Data/test_data.txt', 'w')
+    runtime_fp = open(f'./Data/avg_time_{dp}.txt', 'w')
     data_fp = open(f'./Data/SA_run_data_{dp}.txt', 'w')
     num_runs = 500
-    graph_size_list = [10, 20, 25, 30]
-    for i in graph_size_list:
+    for G_nodes in graph_size_list:
       numerator = 0
-      edges = math.floor((i * (i - 1))/2 * dp)
-      nodes = i
-      e = nx.dense_gnm_random_graph(nodes, edges, seed = i)
-      G = GraphAL(nodes, e.edges)
+      edges = math.floor(((G_nodes * (G_nodes - 1))/2) * dp)
+      e = nx.dense_gnm_random_graph(G_nodes, edges, seed = 0)
+      G = GraphAL(G_nodes, e.edges)
       K = Subgraph(G, random_subset=True)
       
       for j in range(num_runs):
         start = time.time() 
-        maxns, maxcost, maxned, itr = simulated_annealing(G, K, 1, ITR_PER_T, MAX_ITR, FREEZE)
+        max_node_set, max_cost, max_nedges, itr = simulated_annealing(G, K, ALPHA, ITR_PER_T, MAX_ITR, FREEZE)
         total_sec = time.time() - start
         numerator += total_sec
-        data_fp.write(f'{i}, {maxcost}, {density_ratio(len(maxns), maxned)}, {itr}\n')
+        data_fp.write(f'{G_nodes},{max_cost},{density_ratio(len(max_node_set), max_nedges)},{itr}\n')
       # print(f'avg {numerator/num_runs}')
-      runtime_fp.write(f'{i},{numerator/num_runs}\n')
+      runtime_fp.write(f'{G_nodes},{numerator/num_runs}\n')
+      data_fp.flush()
+      runtime_fp.flush()
   runtime_fp.close()
   data_fp.close()
 
