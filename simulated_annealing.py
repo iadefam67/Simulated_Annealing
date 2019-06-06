@@ -20,7 +20,7 @@ T = 1
 LAMBDA = 1          # Positive integer constant; penalty for violating independent set constraint 
 ALPHA = 1         # Temperature-reducing coefficient, 0.8 <= ALPHA <= 0.99 
 ITR_PER_T = 100      # Number of iterations before reducing temperature
-MAX_ITR = 1000        # Max number of temperature changes
+MAX_ITR = 100        # Max number of temperature changes
 #FREEZE = 600        # Return current best solution after FREEZE iterations with no change to best solution 
 
 # ~~~~~~~~~~~~~~~~~~ COST AND NEIGHBORHOOD FUNCTIONS ~~~~~~~~~~~~~~~~~~
@@ -124,17 +124,17 @@ def random_search(G, K, max_itr):
 
 
 # ~~~~~~~~~~~~~~~~~~ EXPERIMENT SCRIPT ~~~~~~~~~~~~~~~~~~
-
 if (__name__ == '__main__'):
-  density_list = [.30, .5, .75]
-  graph_size_list = [15, 20]
+  # density_list = [.30, .5, .75]
+  density_list = [.3, .4]
+  graph_size_list = [10, 20]
   for dp in density_list:
     # File pointers for data collection
     SA_runtime_fp = open(f'./Data/SA/SA_avg_time_{dp}.txt', 'w')
     SA_data_fp = open(f'./Data/SA/SA_data_{dp}.txt', 'w')
     LS_runtime_fp = open(f'./Data/LS/LS_avg_time_{dp}.txt', 'w')
     LS_data_fp = open(f'./Data/LS/LS_data_{dp}.txt', 'w')
-    RS_runtime_fp = open(f'./Data/RS/LS_avg_time_{dp}.txt', 'w')
+    RS_runtime_fp = open(f'./Data/RS/RS_avg_time_{dp}.txt', 'w')
     RS_data_fp = open(f'./Data/RS/RS_data_{dp}.txt', 'w')
 
     num_runs = 25         # number of runs to average
@@ -162,10 +162,10 @@ if (__name__ == '__main__'):
       numerator = 0
       for _ in range(num_runs):
         start = time.time()  
-        max_node_set, max_cost, max_nedges, i = naive_local_search(G, K, (ITR_PER_T * MAX_ITR))
+        max_node_set, max_cost, max_nedges = naive_local_search(G, K, (ITR_PER_T * MAX_ITR))
         numerator += (time.time() - start)
         LS_data_fp.write(f'{G_nodes},{max_cost},{density_ratio(len(max_node_set), max_nedges)}\n')
-      LS_runtime_fp.write(f'{G_nodes},{numerator/num_runs}')
+      LS_runtime_fp.write(f'{G_nodes},{numerator/num_runs}\n')
       LS_data_fp.flush()
       LS_runtime_fp.flush()
       # Run Random Search
@@ -175,30 +175,13 @@ if (__name__ == '__main__'):
         best_K, best_K_cost = random_search(G, K, (ITR_PER_T * MAX_ITR))
         numerator += (time.time() - start)
         RS_data_fp.write(f'{G_nodes},{best_K_cost},{density_ratio(best_K.nvertices, best_K.nedges)}\n')
-      RS_runtime_fp.write(f'{G_nodes},{numerator/num_runs}')
+      RS_runtime_fp.write(f'{G_nodes},{numerator/num_runs}\n')
       RS_data_fp.flush()
       RS_runtime_fp.flush() 
-        
-      # print(f'avg {numerator/num_runs}')
   SA_runtime_fp.close()
   SA_data_fp.close()
+  RS_runtime_fp.close()
+  RS_data_fp.close()
+  LS_runtime_fp.close()
+  LS_data_fp.close()
 
-
-
-  # G = GraphAL(5, [(1,2),(2,3),(3,4),(0,4),(1,4)])
-  # nodes = 5
-  # edges = 9 
-  # G = GraphAL(nodes, e.edges)
-  # K = Subgraph(G, random_subset=True)
-  # maxns, maxcost, maxned, i = simulated_annealing(G, K, 1, 10, MAX_ITR, FREEZE)
-  # print(i)
-
-
-  # for i in range(11):
-    # best, cost, nedges, itr_stop = simulated_annealing(G,K)
-    # print(f'cost {cost}, itr stop: {itr_stop}, cardinality {len(best)}')
-    # print(f'Density of final solution: {density_ratio(len(best), nedges)}')
-    
-  # for _ in range(10):
-  #   best, cost, itr_stop = simulated_annealing(G)
-  #   print(f'best {best} cost {cost}, itr stop: {itr_stop}')
