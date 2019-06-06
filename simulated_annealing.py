@@ -14,14 +14,11 @@ from graph import count_edges, density_ratio, neighbor_union_subtract
 
 #Global Parameters
 # ~~~~~~~~~~~~~~~~~~ GLOBALS ~~~~~~~~~~~~~~~~~~
-# FIXME need to make sure that temp doesn't get too small
-# throws exp error math error
-T = 1
-LAMBDA = 1          # Positive integer constant; penalty for violating independent set constraint 
-ALPHA = 1         # Temperature-reducing coefficient, 0.8 <= ALPHA <= 0.99 
-ITR_PER_T = 100      # Number of iterations before reducing temperature
-MAX_ITR = 100        # Max number of temperature changes
-#FREEZE = 600        # Return current best solution after FREEZE iterations with no change to best solution 
+LAMBDA = 1                # Positive integer constant; penalty for violating independent set constraint 
+ALPHA = 1                # Temperature-reducing coefficient, 0.8 <= ALPHA <= 0.99 
+ITR_PER_T = 2000          # Number of iterations before reducing temperature
+MAX_ITR = 500             # Max number of temperature changes
+FREEZE = 50000           # Return current best solution after FREEZE iterations with no change to best solution 
 
 # ~~~~~~~~~~~~~~~~~~ COST AND NEIGHBORHOOD FUNCTIONS ~~~~~~~~~~~~~~~~~~
 def cost_dense(num_nodes_K, num_edges_K, t=None):
@@ -79,7 +76,7 @@ def simulated_annealing(G, K, alpha, itr_per_t, max_itr, freeze):
       itr += 1
     # reduce temp
     #FIXME approx
-    if t > 0.01:
+    if t > 0.001:
       t = ALPHA * t
   return (max_node_set, max_cost, max_nedges, itr)
 # ~~~~~~~~~~~~~~~~~~ LOCAL SEARCH ~~~~~~~~~~~~~~~~~~
@@ -89,7 +86,8 @@ def naive_local_search(G, K, max_itr):
   max_cost = float("-inf")
   max_node_set = None
   max_nedges = None
-  for _ in range(max_itr):
+  last_update = 0
+  for itr in range(max_itr):
     # get neighbor solution
     K_prime, K_prime_nvertices = neighbor_union_subtract(G, K)
     K_prime_nedges = count_edges(G, K_prime)
@@ -102,32 +100,38 @@ def naive_local_search(G, K, max_itr):
       max_node_set = cur_max_set
       max_nedges = cur_nedges
       max_cost = cur_max_cost
+      last_update = itr
+    if (itr - last_update) > FREEZE:
+      return (max_node_set, max_cost, max_nedges, itr)
     # update K 
     if K_prime_cost >= K_cost:
       K.node_set = K_prime
       K.nvertices = K_prime_nvertices
       K.nedges = K_prime_nedges
-  return (max_node_set, max_cost, max_nedges)
+  return (max_node_set, max_cost, max_nedges, itr)
 
 # ~~~~~~~~~~~~~~~~~~ RANDOM SEARCH ~~~~~~~~~~~~~~~~~~
 def random_search(G, K, max_itr):
   """Explores possible randomly-generated subgraphs of G, returns best found solution for subgraph K. Not guaranteed to be MIS. """
   best_K = K  
   best_K_cost = cost_dense(K.nvertices, K.nedges)
-  for _ in range(max_itr):
+  last_update = 0
+  for itr in range(max_itr):
     K = Subgraph(G, random_subset=True)
     K_cost = cost_dense(K.nvertices, K.nedges)
     if K_cost > best_K_cost:
       best_K = K
       best_K_cost = K_cost
-  return (K, best_K_cost)
+      last_update = itr
+    if (itr - last_update > FREEZE):
+      return (K, best_K_cost, itr)
+  return (K, best_K_cost, itr)
 
 
 # ~~~~~~~~~~~~~~~~~~ EXPERIMENT SCRIPT ~~~~~~~~~~~~~~~~~~
 if (__name__ == '__main__'):
-  # density_list = [.30, .5, .75]
-  density_list = [.3, .4]
-  graph_size_list = [10, 20]
+  density_list = [.30, .5, .75]
+  graph_size_list = [1000, 1500, 2000, 2500]
   for dp in density_list:
     # File pointers for data collection
     SA_runtime_fp = open(f'./Data/SA/SA_avg_time_{dp}.txt', 'w')
@@ -158,26 +162,29 @@ if (__name__ == '__main__'):
       SA_runtime_fp.write(f'{G_nodes},{numerator/num_runs}\n')
       SA_data_fp.flush()
       SA_runtime_fp.flush()
+      print(f'done with SA')
       # Run Local Search
       numerator = 0
       for _ in range(num_runs):
         start = time.time()  
-        max_node_set, max_cost, max_nedges = naive_local_search(G, K, (ITR_PER_T * MAX_ITR))
+        max_node_set, max_cost, max_nedges, itr = naive_local_search(G, K, (ITR_PER_T * MAX_ITR))
         numerator += (time.time() - start)
-        LS_data_fp.write(f'{G_nodes},{max_cost},{density_ratio(len(max_node_set), max_nedges)}\n')
+        LS_data_fp.write(f'{G_nodes},{max_cost},{density_ratio(len(max_node_set), max_nedges)},{itr}\n')
       LS_runtime_fp.write(f'{G_nodes},{numerator/num_runs}\n')
       LS_data_fp.flush()
       LS_runtime_fp.flush()
+      print(f'done with LS')
       # Run Random Search
       numerator = 0
       for _ in range(num_runs):
         start = time.time()  
-        best_K, best_K_cost = random_search(G, K, (ITR_PER_T * MAX_ITR))
+        best_K, best_K_cost, itr = random_search(G, K, (ITR_PER_T * MAX_ITR))
         numerator += (time.time() - start)
-        RS_data_fp.write(f'{G_nodes},{best_K_cost},{density_ratio(best_K.nvertices, best_K.nedges)}\n')
+        RS_data_fp.write(f'{G_nodes},{best_K_cost},{density_ratio(best_K.nvertices, best_K.nedges)},{itr}\n')
       RS_runtime_fp.write(f'{G_nodes},{numerator/num_runs}\n')
       RS_data_fp.flush()
       RS_runtime_fp.flush() 
+      print(f'done with run {dp}, {G_nodes}')
   SA_runtime_fp.close()
   SA_data_fp.close()
   RS_runtime_fp.close()
