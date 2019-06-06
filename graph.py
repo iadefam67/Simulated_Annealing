@@ -61,6 +61,8 @@ def density_ratio(nvertices, nedges):
     assert nedges <= (nvertices * nvertices - 1)/2
   except AssertionError:
     print('Impossible number of edges.')
+  if nvertices == 0 or nvertices == 1:
+    return 0
   return (2 * nedges)/(nvertices * (nvertices - 1))
 
 def neighbor_union_subtract(G, K):
