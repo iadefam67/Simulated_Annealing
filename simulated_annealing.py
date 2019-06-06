@@ -16,9 +16,9 @@ from graph import count_edges, density_ratio, neighbor_union_subtract
 # ~~~~~~~~~~~~~~~~~~ GLOBALS ~~~~~~~~~~~~~~~~~~
 LAMBDA = 1                # Positive integer constant; penalty for violating independent set constraint 
 ALPHA = 1                # Temperature-reducing coefficient, 0.8 <= ALPHA <= 0.99 
-ITR_PER_T = 2000          # Number of iterations before reducing temperature
+ITR_PER_T = 800          # Number of iterations before reducing temperature
 MAX_ITR = 500             # Max number of temperature changes
-FREEZE = 50000           # Return current best solution after FREEZE iterations with no change to best solution 
+FREEZE = 1200           # Return current best solution after FREEZE iterations with no change to best solution 
 
 # ~~~~~~~~~~~~~~~~~~ COST AND NEIGHBORHOOD FUNCTIONS ~~~~~~~~~~~~~~~~~~
 def cost_dense(num_nodes_K, num_edges_K, t=None):
@@ -39,7 +39,6 @@ def accept_neighbor_solution(cost_K, cost_K_prime, t):
 # ~~~~~~~~~~~~~~~~~~ SIMULATED ANNEALING ~~~~~~~~~~~~~~~~~~ 
 def simulated_annealing(G, K, alpha, itr_per_t, max_itr, freeze):
   """ Simulated Annealing implementation for the Maximum Independent Set Problem. """
-  # FIXME rework globals vs parameters.
   t = 1
   itr = 0
   max_cost = float('-inf')       
@@ -130,8 +129,8 @@ def random_search(G, K, max_itr):
 
 # ~~~~~~~~~~~~~~~~~~ EXPERIMENT SCRIPT ~~~~~~~~~~~~~~~~~~
 if (__name__ == '__main__'):
-  density_list = [.30, .5, .75]
-  graph_size_list = [1000, 1500, 2000, 2500]
+  density_list = [.25, .75]
+  graph_size_list = [500, 600, 700, 800, 900, 1000]
   for dp in density_list:
     # File pointers for data collection
     SA_runtime_fp = open(f'./Data/SA/SA_avg_time_{dp}.txt', 'w')
@@ -141,7 +140,7 @@ if (__name__ == '__main__'):
     RS_runtime_fp = open(f'./Data/RS/RS_avg_time_{dp}.txt', 'w')
     RS_data_fp = open(f'./Data/RS/RS_data_{dp}.txt', 'w')
 
-    num_runs = 25         # number of runs to average
+    num_runs = 10         # number of runs to average
     for G_nodes in graph_size_list:
       numerator = 0       # for calculating average
       # set number of edges by max number of edges possible times density percentage
