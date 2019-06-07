@@ -127,40 +127,38 @@ def random_search(G, K, max_itr):
 # ~~~~~~~~~~~~~~~~~~ EXPERIMENT SCRIPT ~~~~~~~~~~~~~~~~~~
 if (__name__ == '__main__'):
   print(dt.datetime.now())
-  # alpha_list = [.8, .9, .99]
-  # density_list = [.25, .5, .75]
-  # graph_size_list = [300, 400, 500, 600, 700, 800, 90]
-  alpha_list = [.99]
-  density_list = [.1]
-  graph_size_list = [200]
-  num_runs = 2 
+  alpha_list = [.99, .9, .8]
+  density_list = [.1, .7]
+  header = 'Num_G_nodes, Avg_time, Max_cost, Avg_cost, Netx_avg_cost, Percent_MIS, Density'
+  num_runs = 10 
   X_avg = 0
   for a in alpha_list:
+    fp = open(f'./Data/SA_data_a_{a}.txt', 'w')
+    fp.write(f'{header}\n')
     for dp in density_list:
-      # SA_runtime_fp = open(f'./Data/SA_avg_time_{dp}_alpha{a}_with_temp.txt', 'w')
-      # SA_data_fp = open(f'./Data/SA_data_{dp}alpha{a}_with_temp.txt', 'w')
-      for G_nodes in range(10,200):
+      for G_nodes in range(10,20):
         numerator = 0       # for calculating average
-        # set number of edges by max number of edges possible times density percentage
-        edges = math.floor((G_nodes * (G_nodes - 1)/2) * dp) #FIXME double check this....
-        e = nx.dense_gnm_random_graph(G_nodes, edges) #FIXME Removing Seed to see if that's problem
+        edges = math.floor((G_nodes * (G_nodes - 1)/2) * dp) 
+        e = nx.dense_gnm_random_graph(G_nodes, edges) 
         G = GraphAL(G_nodes, e.edges)
-        # print('g size edges', G.nedges)
         X_avg = 0
+        max_K_set = None
+        max_sol_cost = float("-inf")
+        avg_cost = 0
+        MIS_avg = 0
         for _ in range(num_runs):
           X = nx.maximal_independent_set(e)
           X_avg += len(X)
           K = Subgraph(G, random_subset=True)
-          # print('k size edges', K.nedges)
           start = time.time() 
           K_sol, K_sol_cost = simulated_annealing(G, a, ITR_PER_T, MAX_ITR, FREEZE)
-          print(f'SA nodes {len(K_sol)}, cost {K_sol_cost}')
+          avg_cost += K_sol_cost
+          if K_sol_cost > max_sol_cost:
+            max_sol_cost = K_sol_cost
           numerator += (time.time() - start)
-          # SA_data_fp.write(f'{G_nodes},{max_cost},{density_ratio(len(max_node_set), max_nedges)},{itr}\n')
-          # SA_data_fp.flush()
-        # SA_runtime_fp.write(f'{G_nodes},{numerator/num_runs}\n')
-        # SA_runtime_fp.flush()
+          if K_sol_cost == len(K_sol):
+            MIS_avg += 1
+        fp.write(f'{G_nodes},{numerator/num_runs},{max_sol_cost},{avg_cost/num_runs},{X_avg/num_runs},{MIS_avg/num_runs},{dp}\n')
+        fp.flush()
         print(f'done with run {dp}, {G_nodes}, {dt.datetime.now()}')
-        print(f'X avg len {X_avg/num_runs}')
-  # SA_runtime_fp.close()
-  # SA_data_fp.close()
+  fp.close()
