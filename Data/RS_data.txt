@@ -1,0 +1,1 @@
+Num_G_nodes, Avg_time, Max_cost, Avg_cost, Percent_MIS,Density
