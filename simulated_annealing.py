@@ -123,7 +123,7 @@ def random_search(G, K, max_itr):
 
 # ~~~~~~~~~~~~~~~~~~ EXPERIMENT SCRIPTS ~~~~~~~~~~~~~~~~~~
 if (__name__ == '__main__'):
-# LOCAL SEARCH
+  # LOCAL SEARCH
   print(dt.datetime.now())
   header = 'Num_G_nodes, Avg_time, Max_cost, Avg_cost, Percent_MIS,Density'
   num_runs = 5 
@@ -157,42 +157,42 @@ if (__name__ == '__main__'):
 
 
 
-# SIMULATED ANNEALING
-  # print(dt.datetime.now())
-  # alpha_list = [.99, .9, .8]
-  # density_list = [.1, .7]
-  # header = 'Num_G_nodes, Avg_time, Max_cost, Avg_cost, Netx_avg_cost, Percent_MIS, Density'
-  # num_runs = 10 
-  # X_avg = 0
-  # for a in alpha_list:
-  #   fp = open(f'./Data/SA_data_a_{a}.txt', 'w')
-  #   fp.write(f'{header}\n')
-  #   for dp in density_list:
-  #     for G_nodes in range(10,20):
-  #       numerator = 0       # for calculating average
-  #       edges = math.floor((G_nodes * (G_nodes - 1)/2) * dp) 
-  #       e = nx.dense_gnm_random_graph(G_nodes, edges) 
-  #       G = GraphAL(G_nodes, e.edges)
-  #       X_avg = 0
-  #       max_K_set = None
-  #       max_sol_cost = float("-inf")
-  #       avg_cost = 0
-  #       MIS_avg = 0
-  #       for _ in range(num_runs):
-  #         X = nx.maximal_independent_set(e)
-  #         X_avg += len(X)
-  #         K = Subgraph(G, random_subset=True)
-  #         start = time.time() 
-  #         K_sol, K_sol_cost = simulated_annealing(G, a, ITR_PER_T, MAX_ITR, FREEZE)
-  #         avg_cost += K_sol_cost
-  #         if K_sol_cost > max_sol_cost:
-  #           max_sol_cost = K_sol_cost
-  #         numerator += (time.time() - start)
-  #         if K_sol_cost == len(K_sol):
-  #           MIS_avg += 1
-  #       fp.write(f'{G_nodes},{numerator/num_runs},{max_sol_cost},{avg_cost/num_runs},{X_avg/num_runs},{MIS_avg/num_runs},{dp}\n')
-  #       fp.flush()
-  #       print(f'done with run {dp}, {G_nodes}, {dt.datetime.now()}')
-  # fp.close()
+  # SIMULATED ANNEALING
+  print(dt.datetime.now())
+  alpha_list = [.99, .9, .8]
+  density_list = [.1, .7]
+  header = 'Num_G_nodes, Avg_time, Max_cost, Avg_cost, Netx_avg_cost, Percent_MIS, Density'
+  num_runs = 10 
+  X_avg = 0
+  for a in alpha_list:
+    fp = open(f'./Data/SA_data_a_{a}.txt', 'w')
+    fp.write(f'{header}\n')
+    for dp in density_list:
+      for G_nodes in range(10,20):
+        numerator = 0       # for calculating average
+        edges = math.floor((G_nodes * (G_nodes - 1)/2) * dp) 
+        e = nx.dense_gnm_random_graph(G_nodes, edges) 
+        G = GraphAL(G_nodes, e.edges)
+        X_avg = 0
+        max_K_set = None
+        max_sol_cost = float("-inf")
+        avg_cost = 0
+        MIS_avg = 0
+        for _ in range(num_runs):
+          X = nx.maximal_independent_set(e)
+          X_avg += len(X)
+          K = Subgraph(G, random_subset=True)
+          start = time.time() 
+          K_sol, K_sol_cost = simulated_annealing(G, a, ITR_PER_T, MAX_ITR, FREEZE)
+          avg_cost += K_sol_cost
+          if K_sol_cost > max_sol_cost:
+            max_sol_cost = K_sol_cost
+          numerator += (time.time() - start)
+          if K_sol_cost == len(K_sol):
+            MIS_avg += 1
+        fp.write(f'{G_nodes},{numerator/num_runs},{max_sol_cost},{avg_cost/num_runs},{X_avg/num_runs},{MIS_avg/num_runs},{dp}\n')
+        fp.flush()
+        print(f'done with run {dp}, {G_nodes}, {dt.datetime.now()}')
+  fp.close()
 
 
