@@ -1,7 +1,9 @@
 __author__ = 'Lynnae Bryan'
-""" A Simulated Annealing Implementation for CS-584, Spring 2019 """
-"""Implementation based on Steven Skiena's psuedocode and algorithm description from
-   'The Algorithm Design Manual'. See paper for full citation. """
+""" A Simulated Annealing Implementation for CS-584, Spring 2019 
+  Implementation based on Steven Skiena's psuedocode and algorithm description from
+  'The Algorithm Design Manual'. See paper for full citation. 
+
+  Dependency: Networkx, 2.3"""
 
 import math
 import random
@@ -46,18 +48,22 @@ def accept_neighbor_solution_random(cost_K, cost_K_prime, threshold):
 # ~~~~~~~~~~~~~~~~~~ SIMULATED ANNEALING ~~~~~~~~~~~~~~~~~~ 
 def simulated_annealing(G, alpha, itr_per_t, max_itr, freeze):
   """ Simulated Annealing implementation for the Maximum Independent Set Problem. """
+  # Starting subgraph, K
   K = Subgraph(G, random_subset=True)
   t = 1
   best_K = None
   best_K_cost = float("-inf")
   no_change = 0
   total_itr = 0
-  while(True):
-    for _ in range(max_itr):
+  while(total_itr < max_itr):
+    for _ in range(itr_per_t):
+      # Generate neighbor solution
       K_prime, K_prime_nvertices = neighbor_union_subtract(G, K)
       K_prime_nedges = count_edges(G, K_prime)
+      # Calculate Costs
       cost_K = cost_dense(K.nvertices, K.nedges)
       cost_K_prime = cost_dense(K_prime_nvertices, K_prime_nedges)
+      # Track solution
       if cost_K_prime >= cost_K:
         K.node_set = K_prime
         K.nvertices = K_prime_nvertices  
@@ -68,6 +74,7 @@ def simulated_annealing(G, alpha, itr_per_t, max_itr, freeze):
           best_K_cost = cost_K_prime
           total_itr += 1
           continue
+      # Probability of accepting worse solution
       elif accept_neighbor_solution(cost_K, cost_K_prime, t):
         K.node_set = K_prime
         K.nvertices = K_prime_nvertices  
@@ -77,11 +84,9 @@ def simulated_annealing(G, alpha, itr_per_t, max_itr, freeze):
       if no_change >= freeze:
         return (best_K, best_K_cost)
       total_itr += 1
-      if total_itr > max_itr:
-        return (best_K, best_K_cost)
     if t > 0.0001:
-      t = t * alpha   #reduce temp
-
+      t = t * alpha   #reduce temperature
+  return (best_K, best_K_cost)
 # ~~~~~~~~~~~~~~~~~~ LOCAL SEARCH ~~~~~~~~~~~~~~~~~~
 def naive_local_search(G, K, max_itr):
   """Starts with subgraph K, and searches neighbor states. Only explores local optima. """
@@ -129,36 +134,36 @@ def random_search(G, K, max_itr):
 # ~~~~~~~~~~~~~~~~~~ EXPERIMENT SCRIPTS ~~~~~~~~~~~~~~~~~~
 if (__name__ == '__main__'):
   # LOCAL SEARCH
-  print(dt.datetime.now())
-  header = 'Num_G_nodes, Avg_time, Max_cost, Avg_cost, Percent_MIS,Density'
-  num_runs = 5 
-  density_list = [.1, .7]
-  fp = open(f'./Data/RS_data.txt', 'w')
-  fp.write(f'{header}\n')
-  for dp in density_list:
-    for G_nodes in range(15, 21):
-      time_avg = 0       # for calculating average
-      edges = math.floor((G_nodes * (G_nodes - 1)/2) * dp) 
-      e = nx.dense_gnm_random_graph(G_nodes, edges) 
-      G = GraphAL(G_nodes, e.edges)
-      max_K_set = None
-      max_sol_cost = float("-inf")
-      avg_cost = 0
-      MIS_avg = 0
-      for _ in range(num_runs):
-        K = Subgraph(G, random_subset=True)
-        start = time.time() 
-        K_sol_len, K_sol_cost = random_search(G,K, MAX_ITR)
-        avg_cost += K_sol_cost
-        if K_sol_cost > max_sol_cost:
-          max_sol_cost = K_sol_cost
-        time_avg += (time.time() - start)
-        if K_sol_cost == K_sol_len:
-          MIS_avg += 1
-      fp.write(f'{G_nodes},{time_avg/num_runs},{max_sol_cost},{avg_cost/num_runs},{MIS_avg/num_runs},{dp}\n')
-      fp.flush()
-      print(f'done with run {dp}, {G_nodes}, {dt.datetime.now()}')
-  fp.close()
+  # print(dt.datetime.now())
+  # header = 'Num_G_nodes, Avg_time, Max_cost, Avg_cost, Percent_MIS,Density'
+  # num_runs = 5 
+  # density_list = [.1, .7]
+  # fp = open(f'./Data/RS_data.txt', 'w')
+  # fp.write(f'{header}\n')
+  # for dp in density_list:
+  #   for G_nodes in range(15, 21):
+  #     time_avg = 0       
+  #     edges = math.floor((G_nodes * (G_nodes - 1)/2) * dp) 
+  #     e = nx.dense_gnm_random_graph(G_nodes, edges) 
+  #     G = GraphAL(G_nodes, e.edges)
+  #     max_K_set = None
+  #     max_sol_cost = float("-inf")
+  #     avg_cost = 0
+  #     MIS_avg = 0
+  #     for _ in range(num_runs):
+  #       K = Subgraph(G, random_subset=True)
+  #       start = time.time() 
+  #       K_sol_len, K_sol_cost = random_search(G,K, MAX_ITR)
+  #       avg_cost += K_sol_cost
+  #       if K_sol_cost > max_sol_cost:
+  #         max_sol_cost = K_sol_cost
+  #       time_avg += (time.time() - start)
+  #       if K_sol_cost == K_sol_len:
+  #         MIS_avg += 1
+  #     fp.write(f'{G_nodes},{time_avg/num_runs},{max_sol_cost},{avg_cost/num_runs},{MIS_avg/num_runs},{dp}\n')
+  #     fp.flush()
+  #     print(f'done with run {dp}, {G_nodes}, {dt.datetime.now()}')
+  # fp.close()
 
 
 
@@ -174,7 +179,7 @@ if (__name__ == '__main__'):
     fp.write(f'{header}\n')
     for dp in density_list:
       for G_nodes in range(10,20):
-        numerator = 0       # for calculating average
+        numerator = 0       
         edges = math.floor((G_nodes * (G_nodes - 1)/2) * dp) 
         e = nx.dense_gnm_random_graph(G_nodes, edges) 
         G = GraphAL(G_nodes, e.edges)
@@ -199,5 +204,4 @@ if (__name__ == '__main__'):
         fp.flush()
         print(f'done with run {dp}, {G_nodes}, {dt.datetime.now()}')
   fp.close()
-
 
