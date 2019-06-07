@@ -178,7 +178,7 @@ if (__name__ == '__main__'):
     fp = open(f'./Data/SA_data_a_{a}.txt', 'w')
     fp.write(f'{header}\n')
     for dp in density_list:
-      for G_nodes in range(10,20):
+      for G_nodes in range(15, 200):
         numerator = 0       
         edges = math.floor((G_nodes * (G_nodes - 1)/2) * dp) 
         e = nx.dense_gnm_random_graph(G_nodes, edges) 
