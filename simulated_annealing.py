@@ -38,6 +38,11 @@ def accept_neighbor_solution(cost_K, cost_K_prime, t):
     return True
   else: return False
   
+def accept_neighbor_solution_random(cost_K, cost_K_prime, threshold):
+  if random.random <= threshold:
+    return True
+  else: return False
+
 # ~~~~~~~~~~~~~~~~~~ SIMULATED ANNEALING ~~~~~~~~~~~~~~~~~~ 
 def simulated_annealing(G, alpha, itr_per_t, max_itr, freeze):
   """ Simulated Annealing implementation for the Maximum Independent Set Problem. """
