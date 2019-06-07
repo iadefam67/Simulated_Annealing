@@ -2,7 +2,6 @@ __author__ = 'Lynnae Bryan'
 
 import random
 
-
 # ~~~~~~~~~~~~~~~~~~ GRAPH CLASSES ~~~~~~~~~~~~~~~~~~
 class GraphAL(object):
   """An adjacency-set based graph representation, based on code written for Prof. Barton Massey's CS-350 Algorithms course. """
@@ -10,7 +9,6 @@ class GraphAL(object):
     self.nvertices = nvertices
     self.nedges = len(edges)
     self.neighbors = [set() for _ in range(nvertices)]
-    #SA attributes
     # build adjacency sets 
     for v1, v2 in edges:
       self.neighbors[v1].add(v2)
@@ -23,7 +21,6 @@ class Subgraph(object):
   def __init__(self, Graph, random_subset=False):
     self.node_set = None
     self.nvertices = None
-    #FIXME check if this is still being used
     self.parent_graph = Graph
     self.nedges = None
     if random_subset == True:
@@ -31,9 +28,8 @@ class Subgraph(object):
   def random_subset(self, Graph):
     """Returns a shuffled list of vertices, with a random length."""
     nodes = [x for x in range(Graph.nvertices)]
-    # FIXME placeholder shuffle
     random.shuffle(nodes)
-    N = random.randint(3, Graph.nvertices)
+    N = random.randint(0, Graph.nvertices)
     self.node_set = set(nodes[:N])
     self.nvertices= len(self.node_set)
     self.nedges = count_edges(self.parent_graph, self.node_set)
@@ -73,14 +69,5 @@ def neighbor_union_subtract(G, K):
   else:
     return ((K.node_set).union({v}), K.nvertices + 1)
 
-# FIXME remove?
-# ~~~~~~~~~~~~~~~~~~ TEST SCRIPT ~~~~~~~~~~~~~~~~~~
-if (__name__ == '__main__'):
-  density = density_ratio(10, 45)
-  print(density)
-  G = GraphAL(5, [(1,2),(2,3),(3,4),(0,4),(1,4)])
-  K = Subgraph(G, random_subset=True)
-  # print(G)
-  # print(K)
-  # print("K edges:", K.nedges) 
+
 
