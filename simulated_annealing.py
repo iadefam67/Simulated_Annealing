@@ -15,11 +15,11 @@ from graph import count_edges, density_ratio, neighbor_union_subtract
 
 #Global Parameters
 # ~~~~~~~~~~~~~~~~~~ GLOBALS ~~~~~~~~~~~~~~~~~~
-LAMBDA = 30                # Positive integer constant; penalty for violating independent set constraint 
-ITR_PER_T = 800          # Number of iterations before reducing temperature
-MAX_ITR = 500             # Max number of temperature changes
-FREEZE = 10000           # Return current best solution after FREEZE iterations with no change to best solution 
-K_CONS = 1 
+LAMBDA = 4                # Positive integer constant; penalty for violating independent set constraint 
+ITR_PER_T = 1000          # Number of iterations before reducing temperature
+FREEZE = 1500          # Return current best solution after FREEZE iterations with no change to best solution 
+MAX_ITR = 1000000             # Max number of temperature changes
+K_CONS = .25 
 
 
 # ~~~~~~~~~~~~~~~~~~ COST AND NEIGHBORHOOD FUNCTIONS ~~~~~~~~~~~~~~~~~~
@@ -39,46 +39,47 @@ def accept_neighbor_solution(cost_K, cost_K_prime, t):
   else: return False
   
 # ~~~~~~~~~~~~~~~~~~ SIMULATED ANNEALING ~~~~~~~~~~~~~~~~~~ 
-def simulated_annealing(G, K, alpha, itr_per_t, max_itr, freeze):
+def simulated_annealing(G, alpha, itr_per_t, max_itr, freeze):
   """ Simulated Annealing implementation for the Maximum Independent Set Problem. """
+  K = Subgraph(G, random_subset=True)
   t = 1
-  itr = 0
-  max_cost = float('-inf')       
-  max_node_set = None
-  max_nedges = None
-  max_last_update = 0
-  while(itr < max_itr * itr_per_t): 
-    for _ in range(itr_per_t):
-      # construct neighbor via union/subtract
+  best_K = None
+  best_K_cost = float("-inf")
+  no_change = 0
+  total_itr = 0
+  while(True):
+    for i in range(max_itr):
       K_prime, K_prime_nvertices = neighbor_union_subtract(G, K)
-      # calculate cost of K and K_prime,
       K_prime_nedges = count_edges(G, K_prime)
-      K_cost = cost_dense(K.nvertices, K.nedges)
-      K_prime_cost = cost_dense(K_prime_nvertices, K_prime_nedges)
-      # See if K or K' cost is better than current maximum
-      cur_max_set, cur_max_cost, cur_nedges = ((K.node_set, K_cost, K.nedges) if K_cost > K_prime_cost else (K_prime, K_prime_cost, K_prime_nedges))
-      if cur_max_cost > max_cost:
-        max_node_set = cur_max_set
-        max_nedges = cur_nedges
-        max_cost = cur_max_cost
-        max_last_update = itr
-      # relies on MAXIMIZING cost function. 
-      if K_prime_cost >= K_cost:
+      cost_K = cost_dense(K.nvertices, K.nedges)
+      cost_K_prime = cost_dense(K_prime_nvertices, K_prime_nedges)
+      # print(cost_K, cost_K_prime)
+      if cost_K_prime >= cost_K:
         K.node_set = K_prime
-        K.nvertices = K_prime_nvertices
+        K.nvertices = K_prime_nvertices  
         K.nedges = K_prime_nedges
-      # accept worse solution by probability, a_n_s returns t/f
-      elif accept_neighbor_solution(K_cost, K_prime_cost, t):
+        no_change = 0
+        if cost_K_prime > best_K_cost:
+          best_K = K_prime
+          best_K_cost = cost_K_prime
+          total_itr += 1
+          continue
+      elif accept_neighbor_solution(cost_K, cost_K_prime, t):
         K.node_set = K_prime
-        K.nvertices = K_prime_nvertices
-        K.nedges = K_prime_nedges
-      itr += 1
-      if (itr - max_last_update) > freeze:
-        return (max_node_set, max_cost, max_nedges, itr) 
-    # reduce temp
-    if t > 0.001:
-      t = alpha * t
-  return (max_node_set, max_cost, max_nedges, itr)
+        K.nvertices = K_prime_nvertices  
+        K.nedges = K_prime_nedges 
+      else:
+        no_change += 1
+      if no_change >= freeze:
+        return (best_K, best_K_cost)
+      # print(cost_K)
+      total_itr += 1
+      if total_itr > max_itr:
+        return (best_K, best_K_cost)
+    if t > 0.0001:
+      t = t * alpha   #reduce temp
+    # print(t)
+
 # ~~~~~~~~~~~~~~~~~~ LOCAL SEARCH ~~~~~~~~~~~~~~~~~~
 def naive_local_search(G, K, max_itr):
   """Starts with subgraph K, and searches neighbor states. Only explores local optima. """
@@ -115,49 +116,51 @@ def random_search(G, K, max_itr):
   """Explores possible randomly-generated subgraphs of G, returns best found solution for subgraph K. Not guaranteed to be MIS. """
   best_K = K  
   best_K_cost = cost_dense(K.nvertices, K.nedges)
-  last_update = 0
   for itr in range(max_itr):
     K = Subgraph(G, random_subset=True)
     K_cost = cost_dense(K.nvertices, K.nedges)
     if K_cost > best_K_cost:
       best_K = K
       best_K_cost = K_cost
-      last_update = itr
   return (K, best_K_cost, itr)
-
 
 # ~~~~~~~~~~~~~~~~~~ EXPERIMENT SCRIPT ~~~~~~~~~~~~~~~~~~
 if (__name__ == '__main__'):
   print(dt.datetime.now())
   # alpha_list = [.8, .9, .99]
-  # density_list = [.25, .75]
-  # graph_size_list = [300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200]
-  # num_runs = 10         # number of runs to average
+  # density_list = [.25, .5, .75]
+  # graph_size_list = [300, 400, 500, 600, 700, 800, 90]
   alpha_list = [.99]
-  density_list = [.2]
-  graph_size_list = [1000] 
-  num_runs = 5 
+  density_list = [.1]
+  graph_size_list = [200]
+  num_runs = 2 
+  X_avg = 0
   for a in alpha_list:
     for dp in density_list:
-      SA_runtime_fp = open(f'./Data/SA_avg_time_{dp}_alpha{a}_no_temp.txt', 'w')
-      SA_data_fp = open(f'./Data/SA_data_{dp}alpha{a}_no_temp.txt', 'w')
-      for G_nodes in graph_size_list:
+      # SA_runtime_fp = open(f'./Data/SA_avg_time_{dp}_alpha{a}_with_temp.txt', 'w')
+      # SA_data_fp = open(f'./Data/SA_data_{dp}alpha{a}_with_temp.txt', 'w')
+      for G_nodes in range(10,200):
         numerator = 0       # for calculating average
         # set number of edges by max number of edges possible times density percentage
         edges = math.floor((G_nodes * (G_nodes - 1)/2) * dp) #FIXME double check this....
-        e = nx.dense_gnm_random_graph(G_nodes, edges, seed=12) #FIXME Removing Seed to see if that's problem
+        e = nx.dense_gnm_random_graph(G_nodes, edges) #FIXME Removing Seed to see if that's problem
         G = GraphAL(G_nodes, e.edges)
-        print('g size edges', G.nedges)
+        # print('g size edges', G.nedges)
+        X_avg = 0
         for _ in range(num_runs):
+          X = nx.maximal_independent_set(e)
+          X_avg += len(X)
           K = Subgraph(G, random_subset=True)
-          print('k size edges', K.nedges)
+          # print('k size edges', K.nedges)
           start = time.time() 
-          max_node_set, max_cost, max_nedges, itr = simulated_annealing(G, K, a, ITR_PER_T, MAX_ITR, FREEZE)
+          K_sol, K_sol_cost = simulated_annealing(G, a, ITR_PER_T, MAX_ITR, FREEZE)
+          print(f'SA nodes {len(K_sol)}, cost {K_sol_cost}')
           numerator += (time.time() - start)
-          SA_data_fp.write(f'{G_nodes},{max_cost},{density_ratio(len(max_node_set), max_nedges)},{itr}\n')
-          SA_data_fp.flush()
-        SA_runtime_fp.write(f'{G_nodes},{numerator/num_runs}\n')
-        SA_runtime_fp.flush()
+          # SA_data_fp.write(f'{G_nodes},{max_cost},{density_ratio(len(max_node_set), max_nedges)},{itr}\n')
+          # SA_data_fp.flush()
+        # SA_runtime_fp.write(f'{G_nodes},{numerator/num_runs}\n')
+        # SA_runtime_fp.flush()
         print(f'done with run {dp}, {G_nodes}, {dt.datetime.now()}')
-  SA_runtime_fp.close()
-  SA_data_fp.close()
+        print(f'X avg len {X_avg/num_runs}')
+  # SA_runtime_fp.close()
+  # SA_data_fp.close()
