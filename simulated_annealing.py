@@ -48,7 +48,7 @@ def simulated_annealing(G, alpha, itr_per_t, max_itr, freeze):
   no_change = 0
   total_itr = 0
   while(True):
-    for i in range(max_itr):
+    for _ in range(max_itr):
       K_prime, K_prime_nvertices = neighbor_union_subtract(G, K)
       K_prime_nedges = count_edges(G, K_prime)
       cost_K = cost_dense(K.nvertices, K.nedges)
@@ -162,7 +162,7 @@ if (__name__ == '__main__'):
   alpha_list = [.99, .9, .8]
   density_list = [.1, .7]
   header = 'Num_G_nodes, Avg_time, Max_cost, Avg_cost, Netx_avg_cost, Percent_MIS, Density'
-  num_runs = 10 
+  num_runs = 5 
   X_avg = 0
   for a in alpha_list:
     fp = open(f'./Data/SA_data_a_{a}.txt', 'w')
